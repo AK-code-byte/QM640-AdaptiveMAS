@@ -1,4 +1,3 @@
-Agent Config,Accuracy (95% CI),Mean Tokens,Acc/1k Tokens (95% CI),Mean Latency (ms)
-single-agent,"0.506 [0.492, 0.520]",481,"1.307 [1.257, 1.358]",0
-static_multi-agent,"0.509 [0.495, 0.523]",3496,"0.148 [0.144, 0.152]",0
-adaptive,"0.484 [0.470, 0.498]",1091,"1.094 [1.043, 1.145]",0
+version https://git-lfs.github.com/spec/v1
+oid sha256:c1ee44a30995545781bcb0179b1f5ca3cf3f1cf0771fd03102c99292b00dcac7
+size 283
