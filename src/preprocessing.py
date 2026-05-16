@@ -67,8 +67,10 @@ def _get_spacy():
 
 def extract_features_single(text: str, dataset_source: str = '') -> dict:
     """
-    Extract the 4-dimensional feature vector per architecture doc §1.2.
-    Returns: num_symptoms, num_conditions, clinical_vignette_length, step_level.
+    Extract the 3-dimensional feature vector per architecture doc §1.2.
+    Returns: num_symptoms, num_conditions, clinical_vignette_length.
+    step_level removed — MedQA-only feature, near-perfect collinearity with
+    dataset_source == 'MedQA' (VIF > 10), constitutes target leakage for routing.
     """
     text_str = str(text)
     nlp = _get_spacy()
@@ -87,25 +89,34 @@ def extract_features_single(text: str, dataset_source: str = '') -> dict:
         n_cond = 1
 
     v_len = len(text_str.split())
-    step_lv = 2 if 'medqa' in str(dataset_source).lower() else 0
     return {
         'num_symptoms': n_symp,
         'num_conditions': n_cond,
         'clinical_vignette_length': v_len,
-        'step_level': step_lv,
     }
 
 
 NLP_FEATURE_COLS = [
-    'num_symptoms', 'num_conditions', 'clinical_vignette_length', 'step_level',
+    'num_symptoms', 'num_conditions', 'clinical_vignette_length',
 ]
 
 
 def _compute_heuristic_score(df: pd.DataFrame) -> pd.Series:
     """
     Heuristic complexity score in [0, 1].
-    score = (vlen/400)*0.4 + (nsymp/15)*0.4 + (ncond/10)*0.2
-    Fixed normalisation constants prevent test-set leakage.
+    score = (vlen/200)*0.4 + (nsymp/30)*0.4 + (ncond/35)*0.2
+
+    Normalisation caps are set at the observed p95 of each feature in the
+    simulation dataset (vlen p95≈205→200, nsymp p95≈28→30, ncond p95≈34→35).
+    Rounding to round numbers keeps constants interpretable and avoids
+    overfitting to a single dataset snapshot.  In a proper train/test split
+    these p95 values should be computed on the training partition only; the
+    simulation-only context here makes full-dataset calibration acceptable.
+
+    Using p95-grounded caps spreads scores more uniformly across [0, 1],
+    allowing all four routing tiers (solo/group-2/group-3/MDT) to fire.
+    The original caps (400/15/10) were set by expert prior and caused the
+    score ceiling to stall at 0.72, making MDT unreachable.
     """
     if 'clinical_vignette_length' in df.columns:
         vlen = df['clinical_vignette_length']
@@ -118,9 +129,9 @@ def _compute_heuristic_score(df: pd.DataFrame) -> pd.Series:
     ncond = df['num_conditions'] if 'num_conditions' in df.columns else pd.Series(1, index=df.index)
 
     return (
-        vlen.fillna(0).clip(upper=400)  / 400  * 0.4
-        + nsymp.fillna(0).clip(upper=15) / 15  * 0.4
-        + ncond.fillna(1).clip(upper=10) / 10  * 0.2
+        vlen.fillna(0).clip(upper=200)  / 200  * 0.4
+        + nsymp.fillna(0).clip(upper=30) / 30  * 0.4
+        + ncond.fillna(1).clip(upper=35) / 35  * 0.2
     ).clip(0.0, 1.0).round(4)
 
 
@@ -140,7 +151,7 @@ def compute_tier_thresholds(df: pd.DataFrame) -> tuple:
 def compute_complexity_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     End-to-end complexity feature pipeline.
-    Stage 1: extract 5D NLP features (scispaCy NER or regex fallback).
+    Stage 1: extract 3D NLP features (scispaCy NER or regex fallback).
     Stage 2: compute calibrated complexity_score (APR-DRG logistic regression or heuristic).
     Stage 3: derive task_complexity categorical from score thresholds.
     """

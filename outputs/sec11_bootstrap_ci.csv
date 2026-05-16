@@ -1,0 +1,4 @@
+Config,Mean Acc,Acc CI Lo,Acc CI Hi,Mean Tok,Tok CI Lo,Tok CI Hi
+single-agent,0.506,0.492,0.52,481.0,474.0,487.0
+static_multi-agent,0.509,0.495,0.523,3496.0,3474.0,3518.0
+adaptive,0.484,0.47,0.498,1091.0,1051.0,1133.0

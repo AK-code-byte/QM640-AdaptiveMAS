@@ -2,12 +2,11 @@ import os
 from typing import Tuple, Dict
 
 BACKBONE_MODEL_MAP = {
-    'GPT-4o':        'gpt-4o',
-    'GPT-4o-mini':   'gpt-4o-mini',
-    'Claude-Sonnet': 'claude-sonnet-4-6',
-    'Claude-Haiku':  'claude-haiku-4-5-20251001',
-    'Llama-3.3-70B': 'meta-llama/Llama-3.3-70B-Instruct',
-    'Ollama':        'ollama',
+    'Claude-Sonnet':    'claude-sonnet-4-6',
+    'Claude-Haiku':     'claude-haiku-4-5-20251001',
+    'Llama-3.3-70B':    'meta-llama/Llama-3.3-70B-Instruct',
+    'Ollama':           'ollama',
+    'Gemini-2.0-Flash': 'gemini-2.0-flash',
 }
 
 # Set TEST_BACKEND in the notebook config cell to control which model runs during
